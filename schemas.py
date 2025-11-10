@@ -1,48 +1,43 @@
 """
-Database Schemas
+Database Schemas for PromptToTube
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a collection in MongoDB.
+Collection name is the lowercase class name.
 """
-
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Literal
 
-# Example schemas (replace with your own):
-
-class User(BaseModel):
+class VideoProject(BaseModel):
     """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
+    Video projects created from a text/voice prompt.
+    Collection name: "videoproject"
     """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    prompt: str = Field(..., description="User prompt describing the video to create")
+    mode: Literal["short", "long"] = Field("short", description="Video format: short or long")
+    duration_sec: int = Field(..., ge=10, le=3600, description="Target duration in seconds")
+    language: str = Field("en", description="Language for narration/captions")
+    voice: Optional[str] = Field(None, description="Selected AI voice id/name")
+    template: Optional[str] = Field(None, description="Selected visual template")
+    brand_name: Optional[str] = Field(None, description="Brand name for watermark/branding")
+    status: Literal["created", "generating", "generated", "error"] = Field("created")
 
-class Product(BaseModel):
+    # Generated assets / metadata
+    script: Optional[str] = Field(None, description="Generated narration/script")
+    title: Optional[str] = Field(None, description="SEO optimized title")
+    tags: Optional[List[str]] = Field(default_factory=list, description="SEO tags")
+    suggestions: Optional[List[str]] = Field(default_factory=list, description="AI edit suggestions")
+    thumbnail_url: Optional[str] = None
+    video_url: Optional[str] = None
+    captions_srt: Optional[str] = None
+
+class AssetRequest(BaseModel):
     """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
+    Minimal payload for creating a new project
     """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
-
-# Add your own schemas here:
-# --------------------------------------------------
-
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+    prompt: str
+    mode: Literal["short", "long"] = "short"
+    duration_sec: int = 60
+    language: str = "en"
+    voice: Optional[str] = None
+    template: Optional[str] = None
+    brand_name: Optional[str] = None
